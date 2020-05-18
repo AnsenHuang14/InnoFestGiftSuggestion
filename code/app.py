@@ -7,6 +7,7 @@ import spacy
 import ast
 from collections import Counter
 from string import punctuation
+from amazonImageCrawler import *
 
 
 # Your API definition
@@ -30,9 +31,9 @@ def calculateSimilarity(inputKeywords, productKeywords):
     return np.mean(highestScore), mostSimilarWord
 
 
-def searchItemByKeywords(inputKeywords, category="ALL_Beauty", n=5):
-    category = category+"WithKeyWords"
-    path = "../data/parsedData/{}.csv".format(category)
+def searchItemByKeywords(inputKeywords, category="All_Beauty", n=5):
+    path = category+"WithKeyWords"
+    path = "../data/parsedData/{}.csv".format(path)
     data = pd.read_csv(path) 
     for idx in data.index:
         productKeywords = data.loc[idx,"keywords"]
@@ -43,9 +44,10 @@ def searchItemByKeywords(inputKeywords, category="ALL_Beauty", n=5):
     output_data = []
     for idx in data.index:
         productURL = "https://www.amazon.com/dp/"+data.loc[idx,"asin"]
-        d = {"title":data.loc[idx,"title"], "imagesUrl":data.loc[idx,"image"], "url":productURL, "nReviews":data.loc[idx,"nReviews"], "rating":data.loc[idx,"rating"]}
+        d = {"title":data.loc[idx,"title"], "imagesUrl":scrapeImagesUrl(productURL), "url":productURL, "nReviews":data.loc[idx,"nReviews"], "rating":data.loc[idx,"rating"]}
         output_data.append(d)
     return output_data
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -53,7 +55,6 @@ def predict():
     inputKeywords = " ".join(input_data["keywords"])
     category = input_data["category"]
     numberOfItems = input_data["n"]
-
     output_data = searchItemByKeywords(inputKeywords, category, n=numberOfItems)
     return jsonify(output_data)
 
@@ -61,8 +62,8 @@ if __name__ == '__main__':
     try:
         port = int(sys.argv[1]) # This is for a command-line input
     except:
-        port = 8080 # If you don't provide any port the port will be set to 12345
+        port = 5000 # If you don't provide any port the port will be set to 12345
 
 
-    app.run(port=port, debug=True)
+    app.run(port=port, debug=False)
 
