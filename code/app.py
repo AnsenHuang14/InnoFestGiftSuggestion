@@ -40,12 +40,17 @@ def searchItemByKeywords(inputKeywords, category="All_Beauty", n=5):
         score, words = calculateSimilarity(inputKeywords, productKeywords)
         data.loc[idx,"score"] = score
 
-    data = data.sort_values(by=['score'], ascending=False).reset_index(drop=True)[0:n]
+    data = data.sort_values(by=['score'], ascending=False).reset_index(drop=True)
     output_data = []
+    numberOfProduct = 0
     for idx in data.index:
         productURL = "https://www.amazon.com/dp/"+data.loc[idx,"asin"]
-        d = {"title":data.loc[idx,"title"], "imagesUrl":scrapeImagesUrl(productURL), "url":productURL, "nReviews":data.loc[idx,"nReviews"], "rating":data.loc[idx,"rating"]}
+        imagesUrl =  scrapeImagesUrl(productURL)
+        if not imagesUrl: continue
+        d = {"title":data.loc[idx,"title"], "imagesUrl":imagesUrl, "url":productURL, "nReviews":data.loc[idx,"nReviews"], "rating":data.loc[idx,"rating"]}
         output_data.append(d)
+        numberOfProduct += 1
+        if numberOfProduct >= n: break
     return output_data
 
 
@@ -63,7 +68,6 @@ if __name__ == '__main__':
         port = int(sys.argv[1]) # This is for a command-line input
     except:
         port = 5000 # If you don't provide any port the port will be set to 12345
-
 
     app.run(port=port, debug=False)
 

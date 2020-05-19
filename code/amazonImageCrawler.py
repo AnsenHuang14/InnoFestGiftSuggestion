@@ -23,5 +23,6 @@ def scrapeImagesUrl(url):
     }
 
     r = requests.get(url, headers=headers)
+    if r.status_code != 200: return None
     data = e.extract(r.text)
-    return list(ast.literal_eval(data["images"]).keys())
+    return list(ast.literal_eval(data["images"]).keys())[0]
