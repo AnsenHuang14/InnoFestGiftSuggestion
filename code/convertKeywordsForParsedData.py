@@ -4,10 +4,11 @@ import spacy
 import ast
 from collections import Counter
 from string import punctuation
+from amazonImageCrawler import *
 
 nlp = spacy.load("en_core_web_lg")
-for i in range(5):
-	category = ["ALL_Beauty","Sports_and_Outdoors","Home_and_Kitchen","Electronics","Clothing_Shoes_and_Jewelry"][i]
+for i in range(0,5):
+	category = ["All_Beauty","Sports_and_Outdoors","Home_and_Kitchen","Electronics","Clothing_Shoes_and_Jewelry"][i]
 	path = "../data/parsedData/{}.csv".format(category)
 	data = pd.read_csv(path) 
 
@@ -34,10 +35,16 @@ for i in range(5):
 
 	# convert keywords
 	for idx in data.index:
+		if idx % 10 == 0: print("======{}=======".format(idx))
 		row = data.iloc[idx]
 		text = " ".join([row.title]+ast.literal_eval(row.description))
 		keywords = get_hotwords(text)
 		data.loc[idx,"keywords"] = keywords
+		productURL = "https://www.amazon.com/dp/"+data.loc[idx,"asin"]
+		print(productURL)
+		data.loc[idx,"image"] =  scrapeImagesUrl(productURL)
+		print(data.loc[idx,"image"])
+		print("=============")
 
 	data.to_csv("../data/parsedData/{}_WithKeyWords.csv".format(category),index=False)
 	print("Finish:{}".format(len(data)))

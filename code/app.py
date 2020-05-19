@@ -8,36 +8,62 @@ import ast
 from collections import Counter
 from string import punctuation
 from amazonImageCrawler import *
+from numpy import dot
+from numpy.linalg import norm
 
+
+ # flask run --port=5000 --host=0.0.0.0
 
 # Your API definition
 app = Flask(__name__)
 nlp = spacy.load("en_core_web_lg")
 print("Model loaded")
 
-def calculateSimilarity(inputKeywords, productKeywords):
-    productKeywords = " ".join(ast.literal_eval(productKeywords))
-    productTokens = nlp(productKeywords)
-    inputTokens = nlp(inputKeywords.lower())
-    highestScore, mostSimilarWord = [0]*len(inputTokens), [""]*len(inputTokens)
+def preprocessAllKeywords():
+    keywordsTable = dict()
+    for category in ["All_Beauty","Sports_and_Outdoors","Home_and_Kitchen","Electronics","Clothing_Shoes_and_Jewelry"]:
+        path = category+"_WithKeyWords"
+        path = "../data/parsedData/{}.csv".format(path)
+        data = pd.read_csv(path) 
+        subTable = dict()
+        for idx in data.index:
+            productKeywords = data.loc[idx,"keywords"]
+            for k in ast.literal_eval(productKeywords):
+                if k not in subTable:
+                    subTable[k] = nlp(k)[0]
+        keywordsTable[category] = subTable
+    return keywordsTable
 
-    for product_t in productTokens:
+keywordsTable = preprocessAllKeywords()
+print("keywordsTable constructed")
+
+
+def preprocessUserKeywords(inputKeywords):
+    inputTokens = nlp(inputKeywords.lower())
+    return inputTokens
+
+def calculateSimilarity(category, inputTokens, productKeywords):
+    productKeywords = ast.literal_eval(productKeywords)
+    highestScore, mostSimilarWord = [0]*len(inputTokens), [""]*len(inputTokens)
+    for product_k in productKeywords:
+        product_t = keywordsTable[category][product_k]
         for idx,input_t in enumerate(inputTokens):
             if product_t.has_vector:
-                score = product_t.similarity(input_t)
+                score = dot(product_t.vector, input_t.vector)/(norm(product_t.vector)*norm(product_t.vector))
+                # score = product_t.similarity(input_t)
                 if score>highestScore[idx]:
                     highestScore[idx] = score
                     mostSimilarWord[idx]= product_t.text+"/"+input_t.text
     return np.mean(highestScore), mostSimilarWord
 
 
-def searchItemByKeywords(inputKeywords, category="All_Beauty", n=5):
-    path = category+"WithKeyWords"
+def searchItemByKeywords(inputKeywords, category, n):
+    path = category+"_WithKeyWords"
     path = "../data/parsedData/{}.csv".format(path)
     data = pd.read_csv(path) 
     for idx in data.index:
         productKeywords = data.loc[idx,"keywords"]
-        score, words = calculateSimilarity(inputKeywords, productKeywords)
+        score, words = calculateSimilarity(category, inputKeywords, productKeywords)
         data.loc[idx,"score"] = score
 
     data = data.sort_values(by=['score'], ascending=False).reset_index(drop=True)
@@ -45,7 +71,7 @@ def searchItemByKeywords(inputKeywords, category="All_Beauty", n=5):
     numberOfProduct = 0
     for idx in data.index:
         productURL = "https://www.amazon.com/dp/"+data.loc[idx,"asin"]
-        imagesUrl =  scrapeImagesUrl(productURL)
+        imagesUrl =  data.loc[idx,"image"]
         if not imagesUrl: continue
         d = {"title":data.loc[idx,"title"], "imagesUrl":imagesUrl, "url":productURL, "nReviews":data.loc[idx,"nReviews"], "rating":data.loc[idx,"rating"]}
         output_data.append(d)
@@ -61,6 +87,8 @@ def predict():
     inputKeywords = " ".join(input_data["keywords"])
     category = input_data["category"]
     numberOfItems = input_data["n"]
+    inputKeywords = preprocessUserKeywords(inputKeywords)
+    print("user keywords:", inputKeywords)
     output_data = searchItemByKeywords(inputKeywords, category, n=numberOfItems)
     return jsonify(output_data)
 

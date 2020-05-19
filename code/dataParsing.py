@@ -66,7 +66,7 @@ def getAverageRating(asin, review_df):
 	return np.sum(indices), review_df[indices].overall.mean()
 
 
-category = ["ALL_Beauty","Sports_and_Outdoors","Home_and_Kitchen","Electronics","Clothing_Shoes_and_Jewelry"][4]
+category = ["All_Beauty","Sports_and_Outdoors","Home_and_Kitchen","Electronics","Clothing_Shoes_and_Jewelry"][4]
 
 df = loadProductData(path='../data/meta_{}.json.gz'.format(category))
 df = df.fillna('')
