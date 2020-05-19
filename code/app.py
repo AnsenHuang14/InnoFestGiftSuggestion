@@ -57,6 +57,7 @@ def searchItemByKeywords(inputKeywords, category="All_Beauty", n=5):
 @app.route('/predict', methods=['POST'])
 def predict():
     input_data = request.json
+    print(input_data)
     inputKeywords = " ".join(input_data["keywords"])
     category = input_data["category"]
     numberOfItems = input_data["n"]
