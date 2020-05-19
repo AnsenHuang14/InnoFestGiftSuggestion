@@ -72,7 +72,7 @@ def searchItemByKeywords(inputKeywords, category, n):
     for idx in data.index:
         productURL = "https://www.amazon.com/dp/"+data.loc[idx,"asin"]
         imagesUrl =  data.loc[idx,"image"]
-        if not imagesUrl: continue
+        if str(imagesUrl) == "nan": continue
         d = {"title":data.loc[idx,"title"], "imagesUrl":imagesUrl, "url":productURL, "nReviews":data.loc[idx,"nReviews"], "rating":data.loc[idx,"rating"]}
         output_data.append(d)
         numberOfProduct += 1
@@ -90,6 +90,8 @@ def predict():
     inputKeywords = preprocessUserKeywords(inputKeywords)
     print("user keywords:", inputKeywords)
     output_data = searchItemByKeywords(inputKeywords, category, n=numberOfItems)
+    print(output_data)
+    print(jsonify(output_data))
     return jsonify(output_data)
 
 if __name__ == '__main__':
