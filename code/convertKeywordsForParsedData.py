@@ -2,28 +2,29 @@ import pandas as pd
 import numpy as np
 import spacy
 import ast
+import sys
 from collections import Counter
 from string import punctuation
 from amazonImageCrawler import *
 
 nlp = spacy.load("en_core_web_lg")
-for i in range(0,5):
-	category = ["All_Beauty","Sports_and_Outdoors","Home_and_Kitchen","Electronics","Clothing_Shoes_and_Jewelry"][i]
+def get_hotwords(text):
+	result = []
+	pos_tag = ['PROPN', 'ADJ', 'NOUN'] # 1
+	doc = nlp(text.lower())
+	for token in doc:
+		if(token.text in nlp.Defaults.stop_words or token.text in punctuation):
+			continue
+		if(token.pos_ in pos_tag):
+			result.append(token.text)
+	result = str(list(set(result)))
+	return result
+
+if __name__ == '__main__':
+	# category = ["All_Beauty","Sports_and_Outdoors","Home_and_Kitchen","Electronics","Clothing_Shoes_and_Jewelry"][i]
+	category = str(sys.argv[1])
 	path = "../data/parsedData/{}.csv".format(category)
 	data = pd.read_csv(path) 
-
-	def get_hotwords(text):
-	    result = []
-	    pos_tag = ['PROPN', 'ADJ', 'NOUN'] # 1
-	    doc = nlp(text.lower())
-	    for token in doc:
-	        if(token.text in nlp.Defaults.stop_words or token.text in punctuation):
-	            continue
-	        if(token.pos_ in pos_tag):
-	            result.append(token.text)
-	    result = str(list(set(result)))
-	    return result
-
 
 	# filter out items by number of reviews and ratings
 	nReviewsThreshold = data.quantile(.9)["nReviews"]
@@ -48,3 +49,4 @@ for i in range(0,5):
 
 	data.to_csv("../data/parsedData/{}_WithKeyWords.csv".format(category),index=False)
 	print("Finish:{}".format(len(data)))
+	

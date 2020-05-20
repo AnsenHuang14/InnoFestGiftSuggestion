@@ -1,12 +1,9 @@
 # Dependencies
 from flask import Flask, request, jsonify
-import traceback
 import pandas as pd
 import numpy as np
 import spacy
 import ast
-from collections import Counter
-from string import punctuation
 from amazonImageCrawler import *
 from numpy import dot
 from numpy.linalg import norm
@@ -83,22 +80,14 @@ def searchItemByKeywords(inputKeywords, category, n):
 @app.route('/predict', methods=['POST'])
 def predict():
     input_data = request.json
-    print(input_data)
+    print("Input: ",input_data)
     inputKeywords = " ".join(input_data["keywords"])
     category = input_data["category"]
     numberOfItems = input_data["n"]
     inputKeywords = preprocessUserKeywords(inputKeywords)
-    print("user keywords:", inputKeywords)
     output_data = searchItemByKeywords(inputKeywords, category, n=numberOfItems)
-    print(output_data)
-    print(jsonify(output_data))
     return jsonify(output_data)
 
 if __name__ == '__main__':
-    try:
-        port = int(sys.argv[1]) # This is for a command-line input
-    except:
-        port = 5000 # If you don't provide any port the port will be set to 12345
-
     app.run(host="0.0.0.0",port=port, debug=False)
 

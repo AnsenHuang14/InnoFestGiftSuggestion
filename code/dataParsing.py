@@ -7,6 +7,7 @@ from urllib.request import urlopen
 from IPython.display import Image as IPImage
 from IPython.core.display import HTML 
 import math
+import sys
 
 def loadMetaData(path):
 	data = []
@@ -60,39 +61,30 @@ def loadProductData(path):
 
 def getAverageRating(asin, review_df):
 	indices = review_df.asin==asin
-	# print(indices)
-	# print(np.sum(indices), review_df[indices].overall.mean())
-	# print(type(np.sum(indices)), type(review_df[indices].overall.mean()))
 	return np.sum(indices), review_df[indices].overall.mean()
 
 
-category = ["All_Beauty","Sports_and_Outdoors","Home_and_Kitchen","Electronics","Clothing_Shoes_and_Jewelry"][4]
 
-df = loadProductData(path='../data/meta_{}.json.gz'.format(category))
-df = df.fillna('')
-# df = df[~df.title.str.contains('getTime')] # filter those unformatted rows
-# df = df[[isinstance(item,list) for item in df.image]].reset_index(drop=True)
-# df = df[[ desc!="" for desc in df.description]].reset_index(drop=True)
-# df = df.drop(columns=["main_cat","rank","also_view","also_buy","price","similar_item","details","feature","tech1","date"])
+if __name__ == '__main__':
+# category = ["All_Beauty","Sports_and_Outdoors","Home_and_Kitchen","Electronics","Clothing_Shoes_and_Jewelry"][4]
+	category = str(sys.argv[1])
+	df = loadProductData(path='../data/meta_{}.json.gz'.format(category))
+	df = df.fillna('')
+	review_df = loadMetaData(path='../data/{}.json.gz'.format(category))
 
-review_df = loadMetaData(path='../data/{}.json.gz'.format(category))
-# review_df = review_df.drop(columns=["verified","reviewerName","unixReviewTime","vote","style","image","summary"])
-
-print("Total number of products: {}".format(len(df)))
-print("Total number of reviews: {}".format(len(review_df)))
-drop_asin = []
-for idx,productId in enumerate(df.asin):
-	if idx % 1000 == 0:
-		print("Finished: {:.2f} in {} of products".format(idx/len(df),len(df)))
-	nReviews, averageRating = getAverageRating(asin=productId, review_df=review_df)
-	if nReviews!=0:
-		df.loc[idx,"rating"] = averageRating
-		df.loc[idx,"nReviews"] = nReviews
-	else:
-		drop_asin.append(productId)
-		# df.drop(productId, axis=0)
-df = df[ [ idx not in drop_asin for idx in df.asin] ]
-
-df.to_csv("../data/parsedData/{}.csv".format(category),index=False)
-print("Finish:{}".format(len(df)))
+	print("Total number of products: {}".format(len(df)))
+	print("Total number of reviews: {}".format(len(review_df)))
+	drop_asin = []
+	for idx,productId in enumerate(df.asin):
+		if idx % 1000 == 0:
+			print("Finished: {:.2f} in {} of products".format(idx/len(df),len(df)))
+		nReviews, averageRating = getAverageRating(asin=productId, review_df=review_df)
+		if nReviews!=0:
+			df.loc[idx,"rating"] = averageRating
+			df.loc[idx,"nReviews"] = nReviews
+		else:
+			drop_asin.append(productId)
+	df = df[ [ idx not in drop_asin for idx in df.asin] ]
+	df.to_csv("../data/parsedData/{}.csv".format(category),index=False)
+	print("Finish:{}".format(len(df)))
 
